@@ -1,3 +1,4 @@
+
 import {service} from '@loopback/core';
 import {
   Count,
@@ -9,13 +10,14 @@ import {
 } from '@loopback/repository';
 import {
   del, get,
-  getModelSchemaRef, HttpErrors, param, patch, post, put, requestBody,
+  getModelSchemaRef, param, patch, post, put, requestBody,
   response
 } from '@loopback/rest';
-import {keys as llaves} from '../config/keys';
-import {Credenciales, Usuario} from '../models';
+import {Usuario} from '../models';
 import {UsuarioRepository} from '../repositories';
-import {FuncionesGeneralesService, NotificacionesService, SesionService} from '../services';
+import {FuncionesGeneralesService} from '../services';
+
+
 
 
 export class UsuarioController {
@@ -23,12 +25,7 @@ export class UsuarioController {
     @repository(UsuarioRepository)
     public usuarioRepository: UsuarioRepository,
     @service(FuncionesGeneralesService)
-    public servicioFunciones: FuncionesGeneralesService,
-    @service(NotificacionesService)
-    public servicioNotificaciones: NotificacionesService,
-    @service(SesionService)
-    public serviciosesion : SesionService
-
+    public servicionFunciones: FuncionesGeneralesService
   ) { }
 
   @post('/usuarios')
@@ -50,45 +47,14 @@ export class UsuarioController {
     usuario: Omit<Usuario, 'id'>,
   ): Promise<Usuario> {
 
-    let claveA = this.servicioFunciones.GenerarClaveAleatoria();
+    let claveA = this.servicionFunciones.GenerarClaveAleatoria();
     console.log("claveAleatoria ", claveA);
-    let claveSifrada = this.servicioFunciones.CifrarTexto(claveA);
+    let claveSifrada = this.servicionFunciones.CifrarTexto(claveA);
     usuario.clave = claveSifrada;
     let usuarioCreado = await this.usuarioRepository.create(usuario);
     return usuarioCreado;
-
   }
 
-  @post('/identificarUsuario')
-  async validar(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Credenciales)
-        }
-      }
-    })
-    Credenciales: Credenciales
-  ): Promise<object> {
-    let usuario = await this.usuarioRepository.findOne({where: {nombre: Credenciales.nombre_usuario, clave: Credenciales.clave}});
-    if (usuario) {
-      //generar un token
-      let token = this.serviciosesion.GenerarToken(usuario);
-      return {
-        user:{
-          username: usuario.nombre
-        },
-        tk: token
-      };
-
-    } else {
-      throw new HttpErrors[401]("las credenciales no son correctas")
-    }
-
-
-
-
-  }
   @get('/usuarios/count')
   @response(200, {
     description: 'Usuario model count',
