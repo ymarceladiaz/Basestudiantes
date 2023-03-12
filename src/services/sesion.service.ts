@@ -14,6 +14,7 @@ export class SesionService {
         exp: llaves.tiempovencimientoJWT,
         data: {
           username: usuario.nombre,
+          role : usuario.tipoUsuarioId
 
         }
       }, llaves.clavesecretaJWT);

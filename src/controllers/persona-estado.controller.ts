@@ -1,3 +1,4 @@
+import {authenticate} from '@loopback/authentication';
 import {
   repository,
 } from '@loopback/repository';
@@ -17,7 +18,7 @@ export class PersonaEstadoController {
     @repository(PersonaRepository)
     public personaRepository: PersonaRepository,
   ) { }
-
+  @authenticate('admin')
   @get('/personas/{id}/estado', {
     responses: {
       '200': {

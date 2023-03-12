@@ -1,4 +1,5 @@
 
+import {authenticate} from '@loopback/authentication';
 import {service} from '@loopback/core';
 import {
   Count,
@@ -10,22 +11,24 @@ import {
 } from '@loopback/repository';
 import {
   del, get,
-  getModelSchemaRef, param, patch, post, put, requestBody,
+  getModelSchemaRef, HttpErrors, param, patch, post, put, requestBody,
   response
 } from '@loopback/rest';
-import {Usuario} from '../models';
+import {Credenciales, Usuario} from '../models';
 import {UsuarioRepository} from '../repositories';
-import {FuncionesGeneralesService} from '../services';
+import {FuncionesGeneralesService, SesionService} from '../services';
 
 
 
-
+@authenticate('admin')
 export class UsuarioController {
   constructor(
     @repository(UsuarioRepository)
     public usuarioRepository: UsuarioRepository,
     @service(FuncionesGeneralesService)
-    public servicionFunciones: FuncionesGeneralesService
+    public servicionFunciones: FuncionesGeneralesService,
+    @service(SesionService)
+    public serviciosesion : SesionService
   ) { }
 
   @post('/usuarios')
@@ -55,6 +58,39 @@ export class UsuarioController {
     return usuarioCreado;
   }
 
+  @authenticate.skip()
+  @post('/identificar-usuario')
+  async validar(
+    @requestBody(
+      {
+        content:{
+          'application/json':{
+            schema: getModelSchemaRef(Credenciales)
+          }
+        }
+      }
+    )
+    credenciales:Credenciales
+):Promise<object>{
+
+    let usuario= await this.usuarioRepository.findOne({where:{nombre: credenciales.nombre_usuario,clave: credenciales.clave}});
+    if(usuario){
+      // generar un token
+      let token = this.serviciosesion.GenerarToken(usuario);
+      return {
+        user: {
+          username : usuario.nombre,
+          role : usuario.tipoUsuarioId
+        },
+        tk: token
+      };
+    } else {
+      throw new HttpErrors[401]("las credenciales no son correptas");
+    }
+
+  }
+
+
   @get('/usuarios/count')
   @response(200, {
     description: 'Usuario model count',
@@ -65,6 +101,9 @@ export class UsuarioController {
   ): Promise<Count> {
     return this.usuarioRepository.count(where);
   }
+
+
+
 
   @get('/usuarios')
   @response(200, {

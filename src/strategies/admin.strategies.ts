@@ -22,14 +22,18 @@ export class AdminStrategies implements AuthenticationStrategy {
         let datos= this.servicionSesion.VerificarTokenJWT(token);
 
         if(datos){
+            if(datos.data.role == "640a2d2ce5faa0e0bfdaa1b2"){
             let perfil : UserProfile = Object.assign({
-                nombre_usurio: datos.data.username
-                
-            });
+                nombre_usurio: datos.data.username,
+                rol : datos.data.role
 
+            });
             return perfil;
+        } else{
+            throw  new HttpErrors[401]("Usted no tiene el rol para ejecutar esta acción");
+        }
         }else{
-            throw  new HttpErrors[401]("No tiene token validi");
+            throw  new HttpErrors[401]("No tiene token válido");
         }
 
 
